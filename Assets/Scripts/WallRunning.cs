@@ -8,71 +8,63 @@ public class WallRunning : MonoBehaviour
     public Transform orientation;
     public PlayerMovement playerMovement;
     private Vector3 moveDirection;
-    [SerializeField]
-    private float moveDownTime = 2;
-    [SerializeField]
-    private float RampUpTime = 3;
+    public Rigidbody rb;
 
 
     // Update is called once per frame
     void FixedUpdate()
     {
-
         //Vector3 forward = transform.TransformDirection(Vector3.forward);
         //Vector3 dRight = transform.TransformVector(1, 0, 1);
         //Vector3 dLeft = transform.TransformVector(-1, 0, 1);
 
-        WallRunRight();
-        WallRunLeft();
+        WallRunCheck();
     }
 
-     void WallRunLeft()
+     void WallRunCheck()
     {
-        Vector3 left = orientation.transform.TransformDirection(-Vector3.right);
-        RaycastHit hit;
-
-        if (Physics.Raycast(transform.position, left, out hit, 5))
+        for(float i = 0; i < Mathf.PI; i += .5f)
         {
-            if (hit.collider != null)
+            var vec = new Vector3(Mathf.Cos(i), 0, Mathf.Sin(i));
+            vec.Normalize();
+            vec = playerMovement.orientation.TransformDirection(vec);
+
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, vec, out hit, 5))
             {
-                Debug.DrawRay(transform.position, left, Color.red, 5);
-                if (Vector3.Dot(hit.normal, Vector3.up) <= Mathf.Abs(1))
+                if (hit.collider != null && hit.collider.tag == "WallRunable")
                 {
-                    Debug.Log("I can wallrun to my Left");
-                    WallRun(hit);
+                    //Debug.DrawRay(transform.position, vec, Color.red, 5);
+                    if (Vector3.Dot(hit.normal, Vector3.up) <= Mathf.Abs(1))
+                    {
+                        Debug.Log("I can wallrun to my Left");
+                        WallRun(hit);
+                        break;
+                    }
                 }
             }
         }
     }
+
 
     void WallRun(RaycastHit hit)
     {
-       var wallRunDirection = Vector3.Cross(hit.normal, Vector3.up);
-        moveDirection = wallRunDirection;
-        moveDirection = transform.TransformDirection(moveDirection);
-        moveDirection.Normalize();
-        moveDirection *= playerMovement.moveSpeed + (playerMovement.maxSpeed * (moveDownTime / RampUpTime));
-    }
-
-    protected void WallRunRight()
-    {
-        Vector3 right = orientation.transform.TransformDirection(Vector3.right);
-        RaycastHit hit;
-
-        if (Physics.Raycast(transform.position, right, out hit, 5))
+        var wallRunDirection = Vector3.Cross(hit.normal, Vector3.up);
+        if (Mathf.Abs(Vector3.Dot(playerMovement.orientation.forward, wallRunDirection)) > 0.5f)
         {
-            Debug.Log("something is to my right");
-            if (hit.collider != null)
-            {
-                Debug.DrawRay(transform.position, right, Color.red, 5);
-                Debug.Log("something is to my right and has a collider");
-                if (Vector3.Dot(hit.normal, Vector3.up) == 0)
-                {
-                    Debug.Log("I can wallrun to my right");
-                    WallRun(hit);
-                }
-            }
+            moveDirection = wallRunDirection;
+            Debug.DrawRay(hit.point, wallRunDirection, Color.red, 5);
+        }
+        else
+        {
+            moveDirection = -wallRunDirection;
+            Debug.DrawRay(hit.point, wallRunDirection, Color.blue, 5);
 
         }
+        moveDirection.Normalize();
+        this.rb.useGravity = false;
+        transform.position += moveDirection * 10 * Time.fixedDeltaTime;
+        this.rb.useGravity = true;
+
     }
 }
