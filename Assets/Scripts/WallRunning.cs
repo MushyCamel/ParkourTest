@@ -9,16 +9,22 @@ public class WallRunning : MonoBehaviour
     public PlayerMovement playerMovement;
     private Vector3 moveDirection;
     public Rigidbody rb;
+    private bool isWallrunning;
 
-
+     void Start()
+    {
+        isWallrunning = false;
+    }
     // Update is called once per frame
     void FixedUpdate()
     {
         //Vector3 forward = transform.TransformDirection(Vector3.forward);
         //Vector3 dRight = transform.TransformVector(1, 0, 1);
         //Vector3 dLeft = transform.TransformVector(-1, 0, 1);
-
-        WallRunCheck();
+        if(isWallrunning == false)
+        {
+            WallRunCheck();
+        }
     }
 
      void WallRunCheck()
@@ -49,22 +55,33 @@ public class WallRunning : MonoBehaviour
 
     void WallRun(RaycastHit hit)
     {
-        var wallRunDirection = Vector3.Cross(hit.normal, Vector3.up);
-        if (Mathf.Abs(Vector3.Dot(playerMovement.orientation.forward, wallRunDirection)) > 0.5f)
+        isWallrunning = true;
+
+        while(isWallrunning == true)
         {
-            moveDirection = wallRunDirection;
-            Debug.DrawRay(hit.point, wallRunDirection, Color.red, 5);
-        }
-        else
-        {
-            moveDirection = -wallRunDirection;
-            Debug.DrawRay(hit.point, wallRunDirection, Color.blue, 5);
+
+            var wallRunDirection = Vector3.Cross(hit.normal, Vector3.up);
+            if (Mathf.Abs(Vector3.Dot(playerMovement.orientation.forward, wallRunDirection)) > 0.5f)
+            {
+                this.rb.useGravity = false;
+                moveDirection = wallRunDirection;
+                moveDirection.Normalize();
+                Debug.DrawRay(hit.point, wallRunDirection, Color.red, 5);
+                transform.position += moveDirection * 10 * Time.fixedDeltaTime;
+            }
+            else
+            {
+                this.rb.useGravity = false;
+                moveDirection = -wallRunDirection;
+                moveDirection.Normalize();
+                Debug.DrawRay(hit.point, wallRunDirection, Color.blue, 5);
+                transform.position += moveDirection * 10 * Time.fixedDeltaTime;
+
+            }   
+            
+            this.rb.useGravity = true;
+            isWallrunning = false;
 
         }
-        moveDirection.Normalize();
-        this.rb.useGravity = false;
-        transform.position += moveDirection * 10 * Time.fixedDeltaTime;
-        this.rb.useGravity = true;
-
     }
 }
